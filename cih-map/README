@@ -1,0 +1,7 @@
+The CIH-Map is an jQuery plugin for map visualization and manipulation. This 
+plugin consume any jQuery UI resources.
+The main idea for this plugins is the reduce the memory consume of browsers like
+Firefox 3.x, in your page you will only have an html button to call the maps 
+visualizations.
+The default implementation contains the Layer switcher to Google and OpenStreetMaps
+layers, and draw options for geometries.

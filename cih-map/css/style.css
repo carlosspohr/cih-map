@@ -1,0 +1,68 @@
+.cih-map-content-div .submit
+{
+	font-size: 12px;
+}
+.cih-map-content-div table td
+{
+	padding: 2px;
+	border-collapse: collapse;
+}
+
+.cih-map-content-div olMapViewport
+{
+	top:-20px;
+}
+
+.cih-map-content-div #box_coordenadas__, .cih-map-content-div #box_escala__, .cih-map-content-div #precision_box__
+{
+	font-size:12px;
+}
+
+.cih-map-content-div .inputbox-map
+{
+	font-size:12px;
+}
+
+.cih-map-search-result p {
+	font-size: 13px;
+	font-family: 'Droid Sans', sans-serif;
+}
+
+.cih-map-search-result p label:hover {
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.error_description
+{
+	line-height: 150%;
+	font-size: 13px;
+	font-family: 'Droid Sans', sans-serif;
+}
+.error_description span
+{
+	color: #990000;
+	font-style: italic; 
+}
+
+.label-map
+{
+	font-size:12px;
+	font-weight:bold;
+}
+
+.inputbox-map
+{
+	border:1px solid #c0c0c0;
+	padding:2px;
+	height: 25px;
+}
+
+.olControlZoomPanel
+{
+	width:24px;
+	background: url("img/arrow-out.png") no-repeat 50% 50%;
+	font-family:'Trebuchet MS', Tahoma, Verdana, Arial, sans-serif;
+}
+
+
