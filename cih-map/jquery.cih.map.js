@@ -46,10 +46,15 @@
     	// Instance the OpenLayers.Map object.
     	options.mapObject = new OpenLayers.Map(options.mapDivId, options.mapOptions);
     	
+    	buildSearchBar (options);
+    	
     	// Add commons layers.
     	options.mapObject.addLayers(registryCommonsLayers(options));
     	// Add user layers.
     	options.mapObject.addLayers(options.mapExtraLayers);
+    	
+    	// Add commons informations of map.
+    	createBottonMapInformations(options);
     	// Add commons map controls.
     	options.mapObject = registryCommonsMapControls(options);
     	
@@ -58,8 +63,93 @@
     		new OpenLayers.LonLat(options.mapDefaultLongitude, options.mapDefaultLatitude), options.defaultZoomLevel
     	);
     	
-    	buildSearchBar (options);
+    	createDefaultCloseButton(options);
     } // fim-function...
+    
+    function createDefaultCloseButton (options)
+    {
+    	$("#cih-map-bottom-map-information").last().append(
+			$("<td>").html(
+				$("<input>")
+					.attr('type'	, 'button')
+					.attr('id'		, 'button-close-dialog')
+					.attr('class'	, 'submit')
+					.attr('value'	, options.dialogButtonClose)
+					.bind('click'	, function(){
+						$('#' + options.uiBodyDiv).dialog('close');
+					})
+			)
+		);
+    	
+    	return options;
+    }
+    
+    function createBottonMapInformations (options)
+    {
+    	$("#table_linha3__").html(
+    		$("<table>").html(
+    			$("<tr>")
+    		).attr('id', 'cih-map-bottom-map-information')
+    		.attr('border', 1) //FIXME remove after
+    	);
+    	
+		if(options.showLonLatOnMapClick == true)
+		{
+			$("#cih-map-bottom-map-information").append(
+				$("<td>").html(
+					$("<div>")
+						.attr('id', 'cih-map-box-lonlat')
+						.css('font-size', 12)
+						.addClass('cih-map-box-lonlat')
+				).append(
+					$("<input>")
+						.attr('type'	, 'text')
+						.attr('id'		, 'cih-map-box-lonlat-clicked')
+						.attr('class'	, 'cih-map-box-lonlat')
+						.attr('size'	, 26)
+						.css('font-size', 12)
+						.bind('blur'	, function(){
+							$(this).hide();
+						})
+						.hide()
+				).attr('width', '30%')
+			);
+			options.mapObject.events.register("click", options.mapObject, function(evt)
+			{
+				var ponto 		= options.mapObject.getLonLatFromPixel(evt.xy);
+			    var convertido 	= ponto.transform( options.mapObject.getProjectionObject(), new OpenLayers.Projection("EPSG:4326"));
+			    
+			    $("#cih-map-box-lonlat-clicked").attr('value', convertido.lon + ", " + convertido.lat).show().select();
+	        });
+		}
+		
+		if(options.showMapScale == true)
+		{
+			$("#cih-map-bottom-map-information").last().append(
+				$("<td>").html(
+					$("<div>")
+						.attr('id', 'cih-map-box-scale')
+						.css('font-size', 12)
+						.addClass('cih-map-box-scale')
+				)
+			);
+		}
+		
+		if(options.showMapProjection == true)
+		{
+			$("#cih-map-bottom-map-information").last().append(
+				$("<td>").html(
+					$("<div>")
+						.attr('id', 'cih-map-box-scale')
+						.css('font-size', 12)
+						.addClass('cih-map-box-scale')
+						.html(
+							options.mapObject.getProjectionObject().getCode()
+						)
+				)
+			);
+		}
+    }
     
     function buildSearchBar (options)
     {
@@ -77,6 +167,16 @@
 		    						.attr('size'	, 50)
 		    						.attr('id'		, 'referencia_consulta')
 		    						.attr('class'	, 'cih-map-search-input')
+		    						.focus()
+		    						.bind('keypress', function(event){
+		    							var code = (event.keyCode ? event.keyCode : event.which);
+		    							
+		    							if(code == 13)
+		    							{
+		    								addressSearchActionListener(options);
+		    								event.preventDefault();
+		    							}
+		    						})
 		    				)
 		    			)
 		    		).append(
@@ -86,6 +186,9 @@
 								.attr('id'		, 'button-busca-location')
 								.attr('class'	, 'cih-map-search-button')
 								.attr('value'	,options.searchLocationButtonText)
+								.bind('click', function(){
+									addressSearchActionListener(options);
+								})
 		    			).append(
 		    				"&nbsp;"
 		    			).append(
@@ -94,13 +197,17 @@
 								.attr('id'		, 'button-limpa-busca')
 								.attr('class'	, 'cih-map-search-button')
 								.attr('value'	,options.searchLocationButtonLimpar)
+								.bind('click', function(){
+									$('#cih-map-result-id').remove();
+									$('#referencia_consulta').attr('value', '').focus();
+								})
 					    )
 		    		).append(
 		    			$("<td>").append(
 			    			$("<label>")
 		    				.html(options.layerCamada + ":" + "<br/>")
 		    				.append(
-				    			$("<select/>")
+				    			$("<select>")
 				    				.attr('id'		, 'select-layer-op')
 				    				.attr('class'	, 'cih-map-search-select-change-layer')
 				    				.append(
@@ -132,63 +239,46 @@
 		    		)	
 		    	)
     	);
-    	
-    	// Input text focus.
-		$('#referencia_consulta').focus();
-		// Binding the action for address search.
-		$('#button-busca-location').bind('click', function(){
-			// Processando a consulta.
-			var query = $('#referencia_consulta').attr('value');
+    }
+    
+    function addressSearchActionListener (options)
+    {
+    	var query = $('#referencia_consulta').attr('value');
+		
+		if(query.length > 0)
+		{
+			$('#result-consulta-localizacao').html(
+				'<center><img src="/sigbiogas/js/cih-map/img/ajax.gif" atl="ajax"/><br/>' + 
+				instancia.getOptions().searchLocationProcessandoConsulta + '</center>'
+			);
 			
-			if(query.length > 0)
-			{
-				$('#result-consulta-localizacao').html(
-					'<center><img src="/sigbiogas/js/cih-map/img/ajax.gif" atl="ajax"/><br/>' + 
-					instancia.getOptions().searchLocationProcessandoConsulta + '</center>'
-				);
-				
-				var cihlocation = new CIHLocationSearch();
-				
-				cihlocation.executeSearch(instancia, query);
-			}
-			else
-			{
-				// Add the error row for user.
-				$('#cih-map-table-search-form').last().append(
-					$("<tr>").html(
-						$("<td>")
-							.attr('colspan', 3)
-							.html(
-								$("<div>")
-									.attr('id', 'result-consulta-localizacao')
-									.html(
-										"<p>" + 
-										"<span>" + options.searchLocationInformeUmTermoAviso + "</span>" +
-										"<br/>" +
-										options.searchLocationInformeUmTermoParaConsulta +
-										"</p>"
-									)
-							)
-					)
-		    	);
-			}
-		});
-//		
-//		$('#referencia_consulta').bind('keypress', function(event){
-//			var code = (event.keyCode ? event.keyCode : event.which);
-//			
-//			if(code == 13)
-//			{
-//				$('#button-busca-location').trigger('click');
-//				event.preventDefault();
-//			}
-//		});
-//		
-//		$('#button-limpa-busca').bind('click', function(){
-//			$('#result-consulta-localizacao').html('');
-//			$('#referencia_consulta').attr('value', '');
-//			$('#referencia_consulta').focus();
-//		});
+			var cihlocation = new CIHLocationSearch();
+			
+			cihlocation.executeSearch(instancia, query);
+		}
+		else
+		{
+			// Add the error row for user.
+			$('#cih-map-table-search-form').last().append(
+				$("<tr>")
+					.attr('id', 'cih-map-result-id')
+					.html(
+					$("<td>")
+						.attr('colspan', 3)
+						.html(
+							$("<div>")
+								.attr('id', 'result-consulta-localizacao')
+								.html(
+									"<p>" + 
+									"<span>" + options.searchLocationInformeUmTermoAviso + "</span>" +
+									"<br/>" +
+									options.searchLocationInformeUmTermoParaConsulta +
+									"</p>"
+								)
+						)
+				)
+	    	);
+		}
     }
     
     function registryCommonsMapControls (options)
@@ -206,12 +296,12 @@
 		
 		var mousePosition = new OpenLayers.Control.MousePosition({
 			id	: 'mouse-position',
-			div	: document.getElementById("#box_coordenadas__")
+			div	: document.getElementById("cih-map-box-lonlat")
 		});
 		
 		var scaleLine = new OpenLayers.Control.ScaleLine({
 			id	: 'scale-line',
-			div	: document.getElementById("box_escala__")
+			div	: document.getElementById("cih-map-box-scale")
 		});
 		
 		var navigation = new OpenLayers.Control.Navigation({
@@ -366,7 +456,10 @@
 			},
 			mapExtraLayers		: {},
 			mapDefaultLongitude	: -6067265.55632, 
-			mapDefaultLatitude	: -2935181.88574
+			mapDefaultLatitude	: -2935181.88574,
+			showLonLatOnMapClick: true,
+			showMapScale		: true,
+			showMapProjection	: true
     	};
     }
     
