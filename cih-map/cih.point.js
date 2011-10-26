@@ -104,7 +104,6 @@ function CIHPointProfile()
 	    $('#ponto_x, ' + this.getCihMap().getOptions().singlePointInputReadWriteX).attr('value', ponto.lon);
 	    $('#ponto_y, ' + this.getCihMap().getOptions().singlePointInputReadWriteY).attr('value', ponto.lat);
 	   	
-	    // TODO rever isto.
 	    this.removeMarkers();
 		this.addMarker(ponto.lon, ponto.lat, true);
 	};
