@@ -23,10 +23,10 @@
     {
     	$('#' + options.uiBodyDiv).remove();
 
-    	$('<div></div>').attr('id', options.uiBodyDiv)
+    	$('<div>').attr('id', options.uiBodyDiv)
     		.attr('title', options.dialogTitle)
     		.html(
-    			$("<div></div>")
+    			$("<div>")
     				.attr('id'		, options.uiContentDiv)
     				.css("margin" 	, 0)
     				.css("padding"	, 0)
@@ -64,12 +64,109 @@
     	);
     	
     	createDefaultCloseButton(options);
+    	
+    	options = registerEditingControls(options, 'POLYGON');
     } // fim-function...
+    
+    function registerEditingControls (options, scope)
+    {
+    	var vector = new OpenLayers.Layer.Vector( "Editable" );
+    	
+    	options.mapObject.addLayers([vector]);
+    	
+    	if(scope == 'POLYGON' || scope == 'LINE')
+    	{
+    		$("#table_linha1_1_1__").html(
+    			$("<input>")
+    				.attr('id'		, 'cih-map-toolbar-nav')
+    				.attr('type'	, 'button')
+    				.attr('value'	, 'Nav')
+    				.bind('click', function(){
+    					for(var i = 0; i < options.mapObject.controls.length; i++)
+    					{
+    						options.mapObject.controls[i].deactivate();
+    					}
+    					
+    					options.mapObject.getControlsByClass('OpenLayers.Control.Navigation')[0].activate();
+    				})
+    		).append(
+    			$("<input>")
+    				.attr('id'		, 'cih-map-toolbar-add')
+    				.attr('type'	, 'button')
+    				.attr('value'	, 'Add')
+    				.bind('click', function(){
+    					for(var i = 0; i < options.mapObject.controls.length; i++)
+    					{
+    						options.mapObject.controls[i].deactivate();
+    					}
+    					
+    					options.mapObject.getControlsByClass('OpenLayers.Control.DrawFeature')[0].activate();
+    				})
+    		).append(
+    			$("<input>")
+    				.attr('id'		, 'cih-map-toolbar-del')
+    				.attr('type'	, 'button')
+    				.attr('value'	, 'Del')
+    				.bind('click', function(){
+    					for(var i = 0; i < options.mapObject.controls.length; i++)
+    					{
+    						options.mapObject.controls[i].deactivate();
+    					}
+    					
+    					options.mapObject.getControlsByClass('OpenLayers.Control.SelectFeature')[0].activate();
+    				})
+    		).append(
+    			$("<input>")
+    				.attr('id'		, 'cih-map-toolbar-edit')
+    				.attr('type'	, 'button')
+    				.attr('value'	, 'Edit')
+    				.bind('click', function(){
+    					for(var i = 0; i < options.mapObject.controls.length; i++)
+    					{
+    						options.mapObject.controls[i].deactivate();
+    					}
+    					
+    					options.mapObject.getControlsByClass('OpenLayers.Control.ModifyFeature')[0].activate();
+    				})
+    		).show();
+    		
+    		var handler = scope == 'POLYGON' ? OpenLayers.Handler.Polygon : OpenLayers.Handler.Path;
+    		
+    		var draw 	= new OpenLayers.Control.DrawFeature(vector, handler);
+    		
+    		var remove 	= new OpenLayers.Control.SelectFeature(vector, {
+    			onSelect:function(feature){ 
+					if(confirm("Deseja excluir a geometria selecionada ?"))
+					{
+						feature.layer.destroyFeatures(feature);
+					} 
+				}
+    		});
+    		
+    		var edit 	= new OpenLayers.Control.ModifyFeature(vector);
+    		
+    		options.mapObject.addControls([draw, remove, edit]);
+    	}
+    	
+    	vector.events.register("beforefeaturesadded", options.mapObject, function(evt)
+		{
+			console.log("passou pelo register....");
+			var qtde = options.amountAllowedGeometries;
+			
+			if(qtde > 0 && qtde == vector.features.length)
+			{
+				options.mapObject.getControlsByClass('OpenLayers.Control.DrawFeature')[0].deactivate();
+				options.mapObject.getControlsByClass('OpenLayers.Control.Navigation')[0].activate();
+			}
+        });
+    	
+		return options;
+    }
     
     function createDefaultCloseButton (options)
     {
     	$("#cih-map-bottom-map-information").last().append(
-			$("<td>").html(
+			$("<td>").html("<br/>").append(
 				$("<input>")
 					.attr('type'	, 'button')
 					.attr('id'		, 'button-close-dialog')
@@ -78,7 +175,7 @@
 					.bind('click'	, function(){
 						$('#' + options.uiBodyDiv).dialog('close');
 					})
-			)
+			).css('text-align', 'right')
 		);
     	
     	return options;
@@ -90,7 +187,7 @@
     		$("<table>").html(
     			$("<tr>")
     		).attr('id', 'cih-map-bottom-map-information')
-    		.attr('border', 1) //FIXME remove after
+    		.attr('border', 0) //FIXME remove after
     	);
     	
 		if(options.showLonLatOnMapClick == true)
@@ -320,6 +417,7 @@
     
     function registryCommonsLayers (options)
 	{
+    	//TODO displayInLayerSwitcher: false
 		var gmap = new OpenLayers.Layer.Google(
 			options.layerGoogleStreets,
             {
@@ -459,7 +557,9 @@
 			mapDefaultLatitude	: -2935181.88574,
 			showLonLatOnMapClick: true,
 			showMapScale		: true,
-			showMapProjection	: true
+			showMapProjection	: false,
+			amountAllowedGeometries: 0, // zero é inifinito.
+			viewOnly			: false
     	};
     }
     
